@@ -1,4 +1,4 @@
-# Deploy V6 to GitHub Pages
+# Deploy V6.1 to GitHub Pages
 
 Upload the files in this folder to the existing `Open-Video` repository and commit to `main`. GitHub Pages will redeploy automatically.
 

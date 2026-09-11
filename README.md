@@ -1,8 +1,8 @@
-# OpenVideo V6 — Connected Beta
+# OpenVideo V6.1 — Connected Beta
 
 This version connects the static GitHub Pages prototype to Supabase using the public publishable key.
 
-## Real in V6
+## Real in V6.1
 - Email/password signup
 - Email/password login/logout
 - Supabase session

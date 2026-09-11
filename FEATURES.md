@@ -1,4 +1,4 @@
-# V6 Features
+# V6.1 Features
 
 - V5 visual prototype and simulated video cards
 - Real Supabase authentication
