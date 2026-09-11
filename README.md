@@ -1,4 +1,4 @@
-# OpenVideo — Master Visual Prototype V4
+# OpenVideo — Master Visual Prototype V5
 
 OpenVideo is a creator-first video platform concept. This repository contains a **static, navigable visual prototype** intended to validate product design, navigation, creator monetization, shopping and payout flows before a backend is built.
 
@@ -34,3 +34,7 @@ Open `index.html` in a browser. No npm, server, database or API keys are require
 All data, payments, banking, identity verification, video uploads and transactions are simulated. Do not enter real bank, tax, identity or card information into this prototype.
 
 When OpenVideo becomes a real beta, sensitive financial data should be collected by a compliant marketplace payment provider such as Stripe Connect rather than stored directly by OpenVideo.
+
+
+## V5 update
+Video cards now open a simulated watch experience with play/pause, progress, seeking, mute and fullscreen-preview controls. No video server is required.

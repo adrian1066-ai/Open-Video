@@ -11,3 +11,6 @@ Advertiser suitability is independent from content removal. Prototype states inc
 
 ## Prototype safety
 Banking/KYC/tax forms are visual simulations only. No real sensitive data is stored.
+
+- Simulated watch player with play/pause, timeline, seeking, mute, and fullscreen preview
+- Direct watch links using `#watch-ID`
