@@ -1,21 +1,13 @@
-# OpenVideo V6.1 — Connected Beta
+# OpenVideo V6.2 — Real Creator Content
 
-This version connects the static GitHub Pages prototype to Supabase using the public publishable key.
+V6.2 keeps the V6.1 Supabase authentication and private video upload flow and adds:
 
-## Real in V6.1
-- Email/password signup
-- Email/password login/logout
-- Supabase session
-- Automatic creator channel creation
-- Authenticated video upload to the private `videos` bucket
-- Video metadata saved to the `videos` table
-- Owner playback using a temporary signed URL
+- Real Creator Studio → Content loading from Supabase
+- Signed-URL playback of the creator's own uploads
+- Storage fallback for files whose metadata row is missing
+- Automatic refresh after a successful upload
+- Demo Creator Studio content removed from the Content tab
 
-## Still simulated
-- Payments/tips/super comments
-- Public multi-user playback of uploaded videos
-- Ads/Premium payouts
-- Moderation workflows
+Upload these files to the root of the existing Open-Video GitHub repository and commit to `main`.
 
-## Important
-The Supabase publishable key is intentionally usable in browser code. Never place a service-role key, database password, Stripe secret, or other private credential in this repository.
+Do not delete the existing `assets` folder or `LICENSE`.

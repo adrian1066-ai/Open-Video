@@ -1,10 +1,13 @@
-# Deploy V6.1 to GitHub Pages
+# OpenVideo V6.2 Deployment
 
-Upload the files in this folder to the existing `Open-Video` repository and commit to `main`. GitHub Pages will redeploy automatically.
+1. Open the existing GitHub repository `Open-Video`.
+2. Choose **Add file → Upload files**.
+3. Upload `index.html`, `README.md`, `FEATURES.md`, and `DEPLOYMENT.md` from this package.
+4. Commit directly to `main`.
+5. Wait for GitHub Pages deployment to turn green.
+6. Open the live site and press `Ctrl + F5`.
+7. Log in.
+8. Go to **Creator Studio → Content**.
+9. The real upload should appear. Press **Play** to generate a private signed playback URL.
 
-Before testing email confirmation, set Supabase Authentication > URL Configuration:
-
-- Site URL: `https://adrian1066-ai.github.io/Open-Video/`
-- Redirect URL: `https://adrian1066-ai.github.io/Open-Video/**`
-
-The Storage bucket `videos` must have the authenticated UID-folder policies already created.
+Keep the existing `assets/` directory and `LICENSE`.
