@@ -1,23 +1,10 @@
-# Deploying the visual prototype
+# Deploy V6 to GitHub Pages
 
-This prototype is static HTML/CSS/JavaScript.
+Upload the files in this folder to the existing `Open-Video` repository and commit to `main`. GitHub Pages will redeploy automatically.
 
-## GitHub
-1. Create a new repository.
-2. Upload the contents of this folder (not the ZIP itself).
-3. Commit the files.
+Before testing email confirmation, set Supabase Authentication > URL Configuration:
 
-Uploading to GitHub alone does **not** make OpenVideo publicly live unless GitHub Pages is enabled.
+- Site URL: `https://adrian1066-ai.github.io/Open-Video/`
+- Redirect URL: `https://adrian1066-ai.github.io/Open-Video/**`
 
-## Public demo options
-You can later connect the repository to Cloudflare Pages, Vercel, Netlify, or GitHub Pages. No backend is required for this visual prototype.
-
-## What comes after visual approval
-1. Authentication and profiles
-2. Database and creator/channel model
-3. Managed video upload/transcoding/playback
-4. Likes, comments, follows, history and search
-5. Reporting/moderation/copyright workflows
-6. Marketplace payouts/KYC
-7. Tips, Super Comments and paid features
-8. Security, legal policies and private beta testing
+The Storage bucket `videos` must have the authenticated UID-folder policies already created.

@@ -1,16 +1,9 @@
-# Prototype feature map
+# V6 Features
 
-## Viewer
-Home, Explore, category feeds, search, watch, like, follow, free comments, Super Comments, Super Likes, tips, shopping, Premium.
-
-## Creator
-Onboarding, channel setup, upload, content list, analytics, monetization, wallet, payout setup, transaction history, shopping/product links, promote video, Creator Pro, copyright, appeals.
-
-## Platform
-Advertiser suitability is independent from content removal. Prototype states include FULL ADS, LIMITED ADS, NO ADS, AGE RESTRICTED and REMOVED.
-
-## Prototype safety
-Banking/KYC/tax forms are visual simulations only. No real sensitive data is stored.
-
-- Simulated watch player with play/pause, timeline, seeking, mute, and fullscreen preview
-- Direct watch links using `#watch-ID`
+- V5 visual prototype and simulated video cards
+- Real Supabase authentication
+- Real private video upload for authenticated users
+- User-owned storage paths (`<auth.uid()>/...`)
+- Real row creation in `videos`
+- Real temporary signed playback for uploader
+- Existing simulated Tips, Super Likes, Super Comments, Shopping, Wallet, Premium and Creator Studio remain for design testing
