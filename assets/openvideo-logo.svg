@@ -1,0 +1,10 @@
+<svg width="160" height="42" viewBox="0 0 160 42" fill="none" xmlns="http://www.w3.org/2000/svg">
+<defs>
+  <linearGradient id="g1" x1="2" y1="4" x2="38" y2="38" gradientUnits="userSpaceOnUse"><stop stop-color="#2F8CFF"/><stop offset=".5" stop-color="#4B56FF"/><stop offset="1" stop-color="#C03CFF"/></linearGradient>
+  <linearGradient id="g2" x1="5" y1="33" x2="35" y2="7" gradientUnits="userSpaceOnUse"><stop stop-color="#005BFF"/><stop offset="1" stop-color="#8B3DFF"/></linearGradient>
+</defs>
+<path d="M7.5 5.8C4.5 7.5 3 10.4 3 13.8v14.4c0 3.4 1.5 6.3 4.5 8 3 1.7 6.2 1.6 9.1-.1l17.7-10.4c2.8-1.7 4.4-4.2 4.4-7.7s-1.6-6-4.4-7.7L16.6 5.9C13.7 4.2 10.5 4.1 7.5 5.8Z" fill="url(#g1)"/>
+<path d="M10.5 11.2c-1.6.9-2.4 2.4-2.4 4.2v5.2c0 1.8.8 3.3 2.4 4.2 1.6.9 3.2.8 4.7-.1l9-5.2c1.4-.8 2.2-1.9 2.2-3.5s-.8-2.7-2.2-3.5l-9-5.2c-1.5-.9-3.1-1-4.7-.1Z" fill="url(#g2)" opacity=".95"/>
+<path d="M15.2 12.9c-.9-.5-2 .1-2 1.2v7.8c0 1.1 1.1 1.7 2 1.2l6.7-3.9c.9-.5.9-1.8 0-2.3l-6.7-4Z" fill="#05070C"/>
+<text x="48" y="27.5" fill="white" font-size="20" font-weight="760" font-family="Arial, Helvetica, sans-serif">OpenVideo</text>
+</svg>
