@@ -1,18 +1,19 @@
-# OpenVideo V6.5
+# OpenVideo V6.6
 
-Real now:
+## Real
 - Authentication
 - Real uploads
-- Public community feed
-- Public playback
-- Real views
-- Views shown in Creator Studio
-- Creator's own signed-in plays excluded from views
+- Public feed and playback
+- Real view counter
+- Views in Creator Studio
+- Creator's own signed-in plays excluded
+- Qualified watch-time threshold
+- 24-hour repeat-view protection per account/browser
 
-Next:
-- Repeat-view / anti-abuse rules
+## Next
 - Likes
 - Comments
 - Follows
-- Thumbnails
+- Better thumbnails
 - Search
+- Stronger traffic-integrity signals

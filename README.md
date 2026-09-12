@@ -1,8 +1,15 @@
-# OpenVideo V6.5 — Studio Views
+# OpenVideo V6.6 — Qualified Views
 
-V6.5 makes real views visible in Creator Studio and prevents the creator's own plays from increasing their public view count.
+V6.6 makes the view counter more realistic.
 
-- Creator Studio Content includes a Views column.
-- View totals come from Supabase `view_count`.
-- Anonymous viewers and other users count.
-- The video's own creator does not add a view while signed in.
+A view now counts only after actual watch time:
+- minimum 3 seconds
+- normally 30% of the video
+- capped at 10 seconds for longer videos
+
+Repeat protection:
+- the same signed-in account counts at most once per video every 24 hours
+- a signed-out browser counts at most once per video every 24 hours
+- the creator's own signed-in playback never counts
+
+This is an early anti-abuse layer, not a full production fraud-detection system.
