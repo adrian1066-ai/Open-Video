@@ -1,13 +1,11 @@
-# OpenVideo V6.2 — Real Creator Content
+# OpenVideo V6.3 — Community Feed
 
-V6.2 keeps the V6.1 Supabase authentication and private video upload flow and adds:
+New in V6.3:
+- Real public/published uploads load into Home and Explore.
+- Real uploads appear before demo discovery cards.
+- Visitors can open a real video.
+- Private Storage playback uses a temporary signed URL.
+- Channel and category information comes from Supabase.
+- V6.2 Creator Studio real-content support remains.
 
-- Real Creator Studio → Content loading from Supabase
-- Signed-URL playback of the creator's own uploads
-- Storage fallback for files whose metadata row is missing
-- Automatic refresh after a successful upload
-- Demo Creator Studio content removed from the Content tab
-
-Upload these files to the root of the existing Open-Video GitHub repository and commit to `main`.
-
-Do not delete the existing `assets` folder or `LICENSE`.
+Before public playback, run `SUPABASE_V6_3_PUBLIC_PLAYBACK.sql` in Supabase SQL Editor.

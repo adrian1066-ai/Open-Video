@@ -1,13 +1,10 @@
-# OpenVideo V6.2 Deployment
+# Deploy V6.3
 
-1. Open the existing GitHub repository `Open-Video`.
-2. Choose **Add file → Upload files**.
-3. Upload `index.html`, `README.md`, `FEATURES.md`, and `DEPLOYMENT.md` from this package.
+1. In Supabase SQL Editor, run `SUPABASE_V6_3_PUBLIC_PLAYBACK.sql`.
+2. In GitHub -> Open-Video -> Add file -> Upload files.
+3. Upload `index.html`, `README.md`, `FEATURES.md`, `DEPLOYMENT.md`.
 4. Commit directly to `main`.
-5. Wait for GitHub Pages deployment to turn green.
-6. Open the live site and press `Ctrl + F5`.
-7. Log in.
-8. Go to **Creator Studio → Content**.
-9. The real upload should appear. Press **Play** to generate a private signed playback URL.
-
-Keep the existing `assets/` directory and `LICENSE`.
+5. Wait for GitHub Pages deployment.
+6. Ctrl+F5 the live site.
+7. Home should show the real upload.
+8. Open an incognito window and confirm the public video also plays there.

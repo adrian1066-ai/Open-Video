@@ -1,19 +1,20 @@
-# OpenVideo V6.2 Features
+# OpenVideo V6.3
 
 ## Real
-- Supabase email/password authentication
-- Session persistence
-- Private Supabase Storage uploads
-- Video metadata insertion into the `videos` table
-- Creator channel creation
-- Creator Studio real upload listing
-- Owner playback with temporary signed URLs
-- Storage fallback for orphaned uploads
+- Sign up / login
+- Private video upload
+- Video metadata
+- Creator Studio real content
+- Owner playback
+- Home real community feed
+- Explore real community feed
+- Public playback after V6.3 Storage policy
 
-## Still prototype/simulated
-- Public multi-user feed of uploaded videos
-- Ads and payouts
-- Tips / Super Comments payments
-- Shopping checkout
-- Public analytics
-- Moderation/admin workflows
+## Next
+- Real views
+- Real likes
+- Real comments
+- Real follows
+- Thumbnails
+- Search
+- Payments
