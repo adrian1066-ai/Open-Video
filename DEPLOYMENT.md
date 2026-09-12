@@ -1,14 +1,17 @@
-# Deploy OpenVideo V6.6
+# Deploy OpenVideo V6.7
 
-1. In Supabase SQL Editor, run `SUPABASE_V6_6_QUALIFIED_VIEWS.sql`.
-2. Upload these website files to GitHub:
+1. Run `SUPABASE_V6_7_REAL_LIKES.sql` in Supabase SQL Editor.
+2. Upload these files to the root of the existing GitHub Open-Video repository:
    - index.html
    - README.md
    - FEATURES.md
    - DEPLOYMENT.md
-3. Commit to `main`.
+   - SUPABASE_V6_7_REAL_LIKES.sql
+3. Commit directly to `main`.
 4. Wait for GitHub Pages.
 5. Test:
-   - creator's own play: no increase
-   - signed-out phone/private browser: play long enough to qualify -> +1
-   - refresh/replay from same browser within 24 hours -> no second increase
+   - signed out: real like total is visible, clicking Like asks for sign in
+   - signed in: Like increments by 1
+   - refresh/reopen: liked state persists
+   - click Like again: total decreases by 1
+   - Creator Studio Content shows the real Likes count

@@ -1,15 +1,10 @@
-# OpenVideo V6.6 — Qualified Views
+# OpenVideo V6.7 — Real Likes
 
-V6.6 makes the view counter more realistic.
+V6.7 connects Likes to Supabase.
 
-A view now counts only after actual watch time:
-- minimum 3 seconds
-- normally 30% of the video
-- capped at 10 seconds for longer videos
-
-Repeat protection:
-- the same signed-in account counts at most once per video every 24 hours
-- a signed-out browser counts at most once per video every 24 hours
-- the creator's own signed-in playback never counts
-
-This is an early anti-abuse layer, not a full production fraud-detection system.
+- A signed-in account can like a public published video once.
+- Clicking Like again removes the like.
+- Likes persist across refreshes and devices for the same account.
+- Signed-out viewers can see the real total, but must sign in to like.
+- Creator Studio Content now shows each video's real like count.
+- Qualified views from V6.6 remain intact.
