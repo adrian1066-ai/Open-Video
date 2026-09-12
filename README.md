@@ -1,9 +1,8 @@
-# OpenVideo V6.4 — Real Views
+# OpenVideo V6.5 — Studio Views
 
-V6.4 connects real public video playback to Supabase view counts.
+V6.5 makes real views visible in Creator Studio and prevents the creator's own plays from increasing their public view count.
 
-- Home/Explore display each real video's `view_count`.
-- A view is counted when the real HTML video actually begins playing, not merely when the card is clicked.
-- The frontend calls the `increment_video_view` Supabase RPC created in the V6.4 SQL step.
-- The displayed count updates after playback begins.
-- V6.3 public community feed and playback remain intact.
+- Creator Studio Content includes a Views column.
+- View totals come from Supabase `view_count`.
+- Anonymous viewers and other users count.
+- The video's own creator does not add a view while signed in.

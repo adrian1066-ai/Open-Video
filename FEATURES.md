@@ -1,19 +1,18 @@
-# OpenVideo V6.4
+# OpenVideo V6.5
 
-## Real
+Real now:
 - Authentication
-- Private Storage uploads
-- Video metadata
-- Creator Studio content
-- Public Home/Explore community feed
+- Real uploads
+- Public community feed
 - Public playback
-- Real view counter
+- Real views
+- Views shown in Creator Studio
+- Creator's own signed-in plays excluded from views
 
-## Next
-- Better anti-abuse / unique-view rules
-- Real likes
-- Real comments
-- Real follows
+Next:
+- Repeat-view / anti-abuse rules
+- Likes
+- Comments
+- Follows
 - Thumbnails
 - Search
-- Payments
