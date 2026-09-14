@@ -1,10 +1,10 @@
-# OpenVideo V6.7 — Real Likes
+# OpenVideo V6.8 — Real Follows
 
-V6.7 connects Likes to Supabase.
+Corrected for the existing `channel_follows` schema that uses `follower_id`.
 
-- A signed-in account can like a public published video once.
-- Clicking Like again removes the like.
-- Likes persist across refreshes and devices for the same account.
-- Signed-out viewers can see the real total, but must sign in to like.
-- Creator Studio Content now shows each video's real like count.
-- Qualified views from V6.6 remain intact.
+- Real Follow / Unfollow
+- One follow per signed-in account per channel
+- Persistent state after refresh
+- Real subscriber count
+- Self-follow protection
+- Keeps V6.6 qualified views and V6.7 real likes

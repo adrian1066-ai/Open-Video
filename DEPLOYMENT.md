@@ -1,17 +1,7 @@
-# Deploy OpenVideo V6.7
+# OpenVideo V6.8 deployment
 
-1. Run `SUPABASE_V6_7_REAL_LIKES.sql` in Supabase SQL Editor.
-2. Upload these files to the root of the existing GitHub Open-Video repository:
-   - index.html
-   - README.md
-   - FEATURES.md
-   - DEPLOYMENT.md
-   - SUPABASE_V6_7_REAL_LIKES.sql
-3. Commit directly to `main`.
+1. Run `SUPABASE_V6_8_REAL_FOLLOWS.sql`.
+2. Upload the five files in this package to the repository root.
+3. Commit to main.
 4. Wait for GitHub Pages.
-5. Test:
-   - signed out: real like total is visible, clicking Like asks for sign in
-   - signed in: Like increments by 1
-   - refresh/reopen: liked state persists
-   - click Like again: total decreases by 1
-   - Creator Studio Content shows the real Likes count
+5. Test Follow -> refresh -> Following; then Unfollow -> refresh -> Follow.

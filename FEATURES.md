@@ -1,20 +1,7 @@
-# OpenVideo V6.7
+# OpenVideo V6.8
 
 ## Real
-- Authentication
-- Uploads
-- Public community feed and playback
-- Qualified / repeat-resistant views
-- Views in Creator Studio
-- Real persistent likes
-- One like per signed-in account per video
-- Unlike support
-- Likes in Creator Studio
+Authentication, uploads, public playback, qualified views, persistent likes, persistent follows, subscriber counts, self-follow protection.
 
 ## Next
-- Real comments
-- Real follows
-- Notifications
-- Thumbnails
-- Search
-- Stronger traffic integrity
+Comments, notifications, thumbnails, search, and full channel pages.
