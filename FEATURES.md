@@ -1,7 +1,3 @@
-# OpenVideo V6.8
+# OpenVideo V6.9
 
-## Real
-Authentication, uploads, public playback, qualified views, persistent likes, persistent follows, subscriber counts, self-follow protection.
-
-## Next
-Comments, notifications, thumbnails, search, and full channel pages.
+Real authentication, uploads, public playback, qualified views, likes, follows, follower counts, and persistent comments.

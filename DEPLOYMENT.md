@@ -1,7 +1,7 @@
-# OpenVideo V6.8 deployment
+# OpenVideo V6.9 deployment
 
-1. Run `SUPABASE_V6_8_REAL_FOLLOWS.sql`.
-2. Upload the five files in this package to the repository root.
-3. Commit to main.
-4. Wait for GitHub Pages.
-5. Test Follow -> refresh -> Following; then Unfollow -> refresh -> Follow.
+1. Upload these five files to the repository root.
+2. Commit directly to main.
+3. Wait for GitHub Pages.
+4. Confirm Connected beta V6.9.
+5. Open a REAL video, post a comment, refresh, and verify it remains.
