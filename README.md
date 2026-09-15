@@ -1,10 +1,12 @@
-# OpenVideo V7.0 — Real Creator Profiles
+# OpenVideo V7.1 — Editable Creator Profiles
 
-V7.0 connects public creator/channel pages to Supabase.
+Adds real creator profile editing:
+- Channel name
+- Handle
+- Description
+- Profile photo upload
+- Banner image upload
+- Owner-only Edit profile button
+- Supabase Storage bucket and RLS for creator media
 
-- Click a real video's creator name/avatar to open the real channel.
-- Real channel name, handle, description and follower count.
-- Real public videos from that channel.
-- Real Follow / Following state using the V6.8 follow RPCs.
-- Self-follow protection remains intact.
-- V6.6 views, V6.7 likes, V6.8 follows and V6.9 comments remain intact.
+Run `SUPABASE_V7_1_CREATOR_PROFILE_EDITING.sql` in Supabase before testing image uploads.
