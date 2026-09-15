@@ -1,7 +1,7 @@
-# OpenVideo V6.9 deployment
+# Deploy OpenVideo V7.0
 
-1. Upload these five files to the repository root.
-2. Commit directly to main.
-3. Wait for GitHub Pages.
-4. Confirm Connected beta V6.9.
-5. Open a REAL video, post a comment, refresh, and verify it remains.
+1. Run `SUPABASE_V7_0_CREATOR_PROFILES.sql` in Supabase SQL Editor.
+2. Upload the V7.0 files to the root of the GitHub repository.
+3. Commit directly to `main`.
+4. Wait for GitHub Pages to finish deployment.
+5. Open a real video and click the creator name/avatar to test the real creator profile.

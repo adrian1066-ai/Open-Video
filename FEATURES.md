@@ -1,3 +1,7 @@
-# OpenVideo V6.9
+# OpenVideo V7.0 Features
 
-Real authentication, uploads, public playback, qualified views, likes, follows, follower counts, and persistent comments.
+## Real Creator Profiles
+Creator channel pages now load from Supabase and show the creator's public videos and real follower state.
+
+## Existing real features preserved
+Qualified views, persistent likes, follows and real comments continue to work.
