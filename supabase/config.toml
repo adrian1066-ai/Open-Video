@@ -1,3 +1,0 @@
-[functions.openvideo-live]
-# Public discovery/playback is supported; each authenticated action validates the JWT through Auth.
-verify_jwt = false
