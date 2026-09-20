@@ -34,16 +34,19 @@ Architecture: static index.html and assets on GitHub Pages; Supabase Auth, Postg
 - Comparison against the supplied ZIP confirms index.html outside the Live section is unchanged apart from final newline normalization. This is a preservation check, not a claim that every legacy workflow was tested.
 - Cloudflare input Open Video Test Live remains enabled; WHIP/WHEP configured and signed playback required. No credential values were printed or committed.
 - Migration 20260920040138_live_creator_replay_control applied; openvideo-live Edge Function version 3 deployed. Live tables retain their closed client permissions. Security advisors show existing legacy function/password warnings and intentional server-only Live RLS informational notices.
-- Static-site release is prepared for GitHub Pages; deployment verification follows the release commit.
+- Released through PR #2, merged as b0145ba21ecba0f5f15a452fb6194388aedfd180. GitHub Pages run 35488577041 completed successfully. Public-site smoke passed: Live form/discovery, hidden private replays, 390px layout, Home, Explore and Auth, with no browser exceptions. Final database check: three ended private ready test replays and three ended recording-disabled tests; zero published test recordings.
 
 Physical desktop-camera to separate phone on a different network still requires an actual device check. Automated mobile viewport tests cannot prove all phone/browser/network combinations.
+
+Device check: sign in on a computer, open Live, allow camera/microphone and start a public broadcast. On a separate phone open the same site, select the active broadcast and enable sound in the player. Sign in to test chat/likes. End on the computer; verify it leaves active discovery and stays out of Published replays until the creator chooses Publish replay. Use different networks to exercise the real connection path. Report browser/device and visible error if it fails; never share publishing credentials.
 
 Replay limitations: browser tab must stay open; interrupted uploads can recover on the same device/account; independent parts may have brief gaps. Already issued replay links expire after 120 seconds; unpublishing cannot revoke bytes already downloaded. Creator library lists the latest 60 sessions.
 
 ## Next phases and launch blockers
 
-Phase 2 needs a securely configured payment provider/Connect account and confirmed platform fee, supported countries/currency, refund and payout rules. No live charges or fabricated payment success. Plan for server-created checkout, verified idempotent webhooks, an immutable transaction ledger, subscription entitlements and payout reconciliation.
+Phase 2: user confirmed target markets Latin America (including Brazil, Mexico and Argentina), the United States and Spain; charging currency is USD. This describes intended markets, not confirmed payment-provider or cross-border payout availability. The Stripe account holder's legal country and platform commission remain to be specified, along with secure provider/Connect configuration and refund/payout rules. No live charges or fabricated payment success. Plan for server-created checkout, verified idempotent webhooks, an immutable transaction ledger, subscription entitlements and payout reconciliation.
 
-User action: verify one actual desktop-camera broadcast from a separate phone/network, and specify operating country, charging currency and platform commission for Phase 2. Stripe test credentials/webhook signing secrets must be configured through a trusted server-secret workflow, never pasted into chat or committed. Payment work is not represented as complete while these inputs are missing.
+User action: verify one actual desktop-camera broadcast from a separate phone/network, and specify the Stripe account holder's legal country and platform commission for Phase 2. Stripe test credentials/webhook signing secrets must be configured through a trusted server-secret workflow, never pasted into chat or committed. Payment work is not represented as complete while these inputs are missing.
 
 Before broad public launch, audit legacy profile role-column privileges/public profile fields, video bucket limits, existing SECURITY DEFINER functions and Auth password protections. Live chat throttling currently uses a non-atomic time-window query, requiring stronger limits in Phase 3. Subscriber-only media authorization is enforced; this is not complete DRM or production moderation. Do not claim the seven-phase roadmap is finished.
+
