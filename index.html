@@ -19,17 +19,25 @@
  <div class="section-title"><h2>Live on OpenVideo</h2><button id="liveRefresh" class="ghost">Refresh</button></div>
  <div id="liveDiscoveryStatus" class="notice" role="status">Loading broadcasts…</div>
  <div id="liveGrid" class="grid" style="margin-top:18px"></div>
+ <div class="section-title"><h2>Published replays</h2><span>Shared by their creators</span></div>
+ <div id="liveReplayGrid" class="grid"></div>
  <div class="section-title"><h2>Go live</h2><span>Your channel, your audience</span></div>
  <div class="form-card"><div class="live-layout"><div>
   <video id="livePreview" class="live-media" autoplay muted playsinline></video>
  </div><div>
   <div class="field"><label for="liveTitle">Broadcast title</label><input id="liveTitle" maxlength="160" placeholder="What are you sharing today?"></div>
+  <div class="field" style="margin-top:12px"><label for="liveCategory">Category</label><input id="liveCategory" maxlength="60" value="Community" placeholder="Travel, Gaming, Music…"></div>
+  <div class="form-grid" style="margin-top:12px"><div class="field"><label for="liveCountry">Country (optional)</label><input id="liveCountry" maxlength="80"></div><div class="field"><label for="liveCity">City (optional)</label><input id="liveCity" maxlength="80"></div></div>
+  <p class="subtext">Only share a country or city you want viewers to see. Your device location is not requested.</p>
   <div class="field" style="margin-top:12px"><label for="liveAccess">Audience</label><select id="liveAccess"><option value="public">Everyone</option><option value="subscribers">Channel subscribers only</option></select></div>
   <p class="subtext">Subscriber access uses active channel memberships. Following a channel does not grant access. Payments are not enabled.</p>
-  <div class="live-actions"><button id="liveStart" class="primary">Start broadcast</button><button id="liveStop" class="danger" disabled>End & save replay</button><button id="liveRecover" class="ghost">Recover recordings</button></div>
+  <label><input id="liveRecord" type="checkbox" checked> Save a private replay for me to review</label>
+  <div class="live-actions"><button id="liveStart" class="primary">Start broadcast</button><button id="liveStop" class="danger" disabled>End broadcast</button><button id="liveRecover" class="ghost">Recover recordings</button></div>
   <p id="liveBroadcastStatus" class="notice" role="status">Sign in to broadcast. Keep this tab open while your replay is recording and uploading.</p>
-  <p class="subtext">Replays are saved in 30-second parts and keep the same audience as the live broadcast. Brief transitions may occur between parts. This beta supports one broadcast at a time.</p>
+  <p class="subtext">Optional replays are private until you publish them and keep the same audience as the broadcast. Recordings use 30-second parts with possible brief transitions. This beta supports one broadcast at a time.</p>
  </div></div></div>
+ <div class="section-title"><h2>My recordings</h2><span>Review before publishing</span></div>
+ <p id="liveLibraryStatus" class="subtext">Sign in to see your recordings.</p><div id="liveLibrary" class="grid"></div>
 </section>
 <section id="view-live-watch" class="view">
  <div class="section-title"><h2 id="liveWatchTitle">OpenVideo Live</h2><button class="ghost" onclick="go('live')">All broadcasts</button></div>
