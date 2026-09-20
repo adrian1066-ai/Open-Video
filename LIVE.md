@@ -28,11 +28,15 @@ Open **Live** in the sidebar to discover broadcasts and replays or broadcast fro
 
 Cloudflare WebRTC does not record broadcasts. A parallel browser `MediaRecorder` saves complete
 30-second media files to IndexedDB and uploads them to the private `live-replays` bucket.
-The replay becomes discoverable only after all numbered parts are verified as uploaded.
+After all numbered parts are verified, the replay becomes a private creator draft. It only
+becomes discoverable after the creator explicitly chooses **Publish replay** in **My recordings**.
+The owner can review private drafts or unpublish a replay. Other accounts cannot obtain
+new signed URLs for private drafts, even when the original broadcast was public.
 The replay player moves through parts in order and lets viewers select a part. There can be
 brief transitions between parts; this is not a continuous HLS recording or DVR.
 
-Use **End & save replay** and keep the tab open until upload finishes. If an upload fails,
+Recording is optional: uncheck **Save a private replay** to broadcast without one.
+Use **End broadcast** and keep the tab open until upload finishes. If an upload fails,
 use **Recover recordings** on the same device while signed in as the original broadcaster.
 Already uploaded files are not uploaded twice. Local pending files are removed only after
 server acknowledgement. Closing/crashing the browser can lose the currently open 30-second part;
@@ -48,7 +52,7 @@ media connection until the broadcast ends.
 
 ## Deployment
 
-1. Apply `supabase/migrations/*_live_whip_whep.sql` once to the existing Supabase project.
+1. Apply the unapplied migrations in `supabase/migrations` in order to the existing Supabase project.
 2. Store the input's `whip`, `whep`, `inputUid`, `host`, signing `keyId` and base64 `jwk` as one JSON
    value in Vault named `openvideo_live_config`, using trusted administration only.
 3. Enable `recording.requireSignedURLs` on the Cloudflare input. Its recording mode does not
@@ -71,11 +75,11 @@ Browser verification should cover two authenticated users and a public guest, de
 access, a granted then expired entitlement, WHIP/WHEP connection, chat, likes, heartbeat expiry,
 replay upload, recovery after interruption, and navigation cleanup. Use synthetic media for tests.
 
-Validated on this deployment: 14 automated tests; browser WHIP transmission and WHEP video/audio;
+Historical baseline verification: 14 automated tests; browser WHIP transmission and WHEP video/audio;
 persisted chat, likes and viewer presence; multi-part replay; retry/recovery after an intentionally
 failed upload; and subscriber replay access before grant, while active and after expiration.
 Direct anonymous reads of Live tables and the Vault configuration RPC were rejected.
-Database advisors report no new warnings for this module. The informational “RLS enabled without
+See OPENVIDEO_PROGRESS.md for current Phase 1 verification. Advisors report no new warnings for this module. The informational “RLS enabled without
 policies” notices are intentional for these server-only tables; existing unrelated warnings remain.
 
 Official references: [Cloudflare browser WHIP/WHEP](https://developers.cloudflare.com/stream/examples/browser-based-webrtc/),

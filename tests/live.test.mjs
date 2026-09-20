@@ -18,6 +18,7 @@ test('stale broadcasts are never advertised as live',()=>{
  assert.equal(fresh(session),true);
  assert.equal(fresh({...session,heartbeat_at:new Date(Date.now()-61000).toISOString()}),false);
  assert.equal(fresh({...session,state:'ended'}),false);
+ assert.equal(fresh({...session,ended_at:new Date().toISOString()}),false);
 });
 test('public discovery strips all credentials and owner identifiers',()=>{
  const result=publicSession({...session,input_uid:'secret',whip:'secret',resource_url:'secret'}, {name:'Creator'});

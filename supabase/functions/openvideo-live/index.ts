@@ -1,4 +1,4 @@
-import { UUID, fresh, canWatch, publicSession, validEndpoint, playbackToken } from './core.mjs';
+import { UUID, fresh, canWatch, publicSession, validEndpoint, playbackToken, replayAvailable } from './core.mjs';
 
 // No upstream URLs, SDP, JWTs or database errors are logged or included in errors.
 const base=Deno.env.get('SUPABASE_URL')!;
@@ -45,6 +45,7 @@ Deno.serve(async(req:Request)=>{
   if(req.method!=='POST')fail(405,'Use POST.');
   const raw=await req.text(); if(raw.length>150000)fail(413,'Request too large.');
   let b:any;try{b=JSON.parse(raw);}catch{fail(400,'Invalid request.');}
+  if(!b||typeof b!=='object'||Array.isArray(b))fail(400,'Invalid request.');
   let user:any=null;
   const bearer=req.headers.get('Authorization');
   if(bearer){
@@ -55,9 +56,10 @@ Deno.serve(async(req:Request)=>{
   const requireUser=()=>user?.id||fail(401,'Sign in to continue.');
   const action=b.action;
   const viewerKey=user?.id?`user:${user.id}`:`guest:${id(b.viewerId)}`;
-  if(action==='list') {
-   const rows=await db('live_sessions?select=*&order=created_at.desc&limit=60');
-   const visible=rows.filter((s:any)=>fresh(s)||s.replay_state==='ready');
+  if(['list','replays','library'].includes(action)) {
+   const filter=action==='library'?`owner_id=eq.${requireUser()}`:action==='replays'?'state=eq.ended&replay_state=eq.ready&replay_published_at=not.is.null':`state=eq.live&ended_at=is.null&heartbeat_at=gt.${query(new Date(Date.now()-60000).toISOString())}`;
+   const rows=await db(`live_sessions?select=*&${filter}&order=created_at.desc&limit=60`);
+   const visible=action==='list'?rows.filter((s:any)=>s.state==='live'&&fresh(s)):rows;
    const stats=visible.length?await db('rpc/openvideo_live_stats','POST',{p_ids:visible.map((s:any)=>s.id)}):[];
    const channels=visible.length?await db(`channels?select=id,name&id=in.(${[...new Set(visible.map((s:any)=>s.channel_id))].join(',')})`):[];
    return reply({sessions:visible.map((s:any)=>publicSession(s,channels.find((c:any)=>c.id===s.channel_id),stats.find((c:any)=>c.live_id===s.id)))});
@@ -65,6 +67,9 @@ Deno.serve(async(req:Request)=>{
   if(action==='create') {
    const owner=requireUser();
    const title=String(b.title||'').trim();if(!title||title.length>160||!['public','subscribers'].includes(b.access))fail(400,'Enter a title and choose an audience.');
+   const category=String(b.category||'Community').trim(),country=String(b.country||'').trim()||null,city=String(b.city||'').trim()||null;
+   if(!category||category.length>60||(country&&country.length>80)||(city&&city.length>80)||(b.recordingEnabled!==undefined&&typeof b.recordingEnabled!=='boolean'))fail(400,'Check category, location and recording settings.');
+   const recording=b.recordingEnabled!==false;
    const channel=(await db(`channels?select=id,owner_id&id=eq.${id(b.channelId)}&owner_id=eq.${owner}`))[0];
    if(!channel)fail(403,'You can only broadcast from your own channel.');
    const config=await db('rpc/openvideo_live_config','POST',{});if(!config?.whip)fail(503,'Live input is not configured.');
@@ -74,7 +79,7 @@ Deno.serve(async(req:Request)=>{
     const connections=await db(`live_connections?live_id=eq.${s.id}`);for(const c of connections)await closeConnection(c);
     await db(`live_sessions?id=eq.${s.id}&heartbeat_at=lt.${query(new Date(Date.now()-60000).toISOString())}`,'PATCH',{state:'ended',ended_at:new Date().toISOString(),replay_state:'incomplete'});
    }
-   const rows=await db('live_sessions','POST',{channel_id:channel.id,owner_id:owner,title,access:b.access,input_uid:config.inputUid});
+   const rows=await db('live_sessions','POST',{channel_id:channel.id,owner_id:owner,title,access:b.access,input_uid:config.inputUid,category,country,city,recording_enabled:recording,replay_state:recording?'recording':'disabled'});
    return reply({id:rows[0].id});
   }
   const s=await sessionFor(b.liveId);
@@ -108,7 +113,9 @@ Deno.serve(async(req:Request)=>{
   }
   if(action==='heartbeat'){
    if(b.broadcast){own();if(!fresh(s))fail(409,'Broadcast lease expired. Please start again.');
-    await db(`live_sessions?id=eq.${s.id}&state=in.(starting,live)`,'PATCH',{state:'live',heartbeat_at:new Date().toISOString()});
+    const publisher=await db(`live_connections?select=id&live_id=eq.${s.id}&kind=eq.publish&limit=1`);
+    if(!publisher.length)fail(409,'Connect your camera before going live.');
+    await db(`live_sessions?id=eq.${s.id}&state=in.(starting,live)&ended_at=is.null`,'PATCH',{state:'live',started_at:s.started_at||new Date().toISOString(),heartbeat_at:new Date().toISOString()});
    } else {await authorize(s,user?.id);if(!fresh(s))fail(409,'This broadcast has ended.');
     const connected=await db(`live_connections?select=id&live_id=eq.${s.id}&viewer_key=eq.${query(viewerKey)}&kind=eq.play&limit=1`);
     if(!connected.length)fail(409,'Connect to the broadcast before joining the audience.');
@@ -117,12 +124,14 @@ Deno.serve(async(req:Request)=>{
   }
   if(action==='end'){
    own();
+   // Hide immediately, but retain the input lease until media resources have closed.
+   await db(`live_sessions?id=eq.${s.id}`,'PATCH',{ended_at:s.ended_at||new Date().toISOString()});
    const cs=await db(`live_connections?live_id=eq.${s.id}`);for(const c of cs)await closeConnection(c);
-   await db(`live_sessions?id=eq.${s.id}`,'PATCH',{state:'ended',ended_at:s.ended_at||new Date().toISOString(),replay_state:s.replay_state==='ready'?'ready':'uploading'});
+   await db(`live_sessions?id=eq.${s.id}`,'PATCH',{state:'ended',ended_at:s.ended_at||new Date().toISOString(),replay_state:s.recording_enabled===false?'disabled':s.replay_state==='ready'?'ready':'uploading'});
    await db(`live_viewers?live_id=eq.${s.id}`,'DELETE');return reply({ok:true});
   }
   if(action==='segment-upload'){
-   own();if(s.replay_state==='ready')fail(409,'Replay already finalized.');
+   own();if(s.recording_enabled===false||s.replay_state==='ready')fail(409,'Recording is disabled or already finalized.');
    if(!Number.isInteger(b.ordinal)||b.ordinal<0||b.ordinal>1439||!Number.isInteger(b.bytes)||b.bytes<1||b.bytes>20971520||!Number.isInteger(b.durationMs)||b.durationMs<1||b.durationMs>120000||!['video/webm','video/mp4'].includes(b.mime))fail(400,'Invalid recording segment.');
    const path=`${s.owner_id}/${s.id}/${b.ordinal}.${b.mime==='video/mp4'?'mp4':'webm'}`;
    const previous=(await db(`live_segments?live_id=eq.${s.id}&ordinal=eq.${b.ordinal}`))[0];
@@ -140,18 +149,23 @@ Deno.serve(async(req:Request)=>{
    await db(`live_segments?live_id=eq.${s.id}&ordinal=eq.${ordinal}`,'PATCH',{uploaded:true});return reply({ok:true});
   }
   if(action==='finalize'){
-   own();if(s.state!=='ended')fail(409,'End the broadcast before publishing its replay.');
+   own();if(s.recording_enabled===false||s.state!=='ended')fail(409,'End a recorded broadcast before saving its replay.');
    const count=Number(b.count);if(!Number.isInteger(count)||count<1||count>1440)fail(400,'No complete recording was found.');
    const segments=await db(`live_segments?live_id=eq.${s.id}&order=ordinal`);
    if(segments.length!==count||segments.some((x:any,i:number)=>x.ordinal!==i||!x.uploaded))fail(409,'Some recording segments are still uploading.');
    await db(`live_sessions?id=eq.${s.id}`,'PATCH',{replay_state:'ready',segment_count:count});return reply({ok:true});
+  }
+  if(action==='publish-replay'){
+   own();if(typeof b.published!=='boolean')fail(400,'Choose whether to publish the replay.');
+   if(s.state!=='ended'||s.replay_state!=='ready')fail(409,'Save the complete replay before publishing.');
+   await db(`live_sessions?id=eq.${s.id}`,'PATCH',{replay_published_at:b.published?(s.replay_published_at||new Date().toISOString()):null});return reply({ok:true});
   }
   await authorize(s,user?.id);
   if(action==='state'){
    const stats=(await db('rpc/openvideo_live_stats','POST',{p_ids:[s.id]}))[0];
    const messages=await db(`live_messages?select=id,display_name,body,created_at&live_id=eq.${s.id}&order=id.desc&limit=60`);
    const liked=user?(await db(`live_likes?live_id=eq.${s.id}&user_id=eq.${user.id}`)).length>0:false;
-   return reply({state:fresh(s)?s.state:'ended',replay_state:s.replay_state,...stats,messages:messages.reverse(),liked});
+   return reply({state:fresh(s)?s.state:'ended',replay_available:replayAvailable(s,user?.id),replay_state:replayAvailable(s,user?.id)?s.replay_state:'unavailable',...stats,messages:messages.reverse(),liked});
   }
   if(action==='chat'){
    const uid=requireUser();if(!fresh(s))fail(409,'This live chat has ended.');
@@ -167,12 +181,13 @@ Deno.serve(async(req:Request)=>{
    else await db(`live_likes?live_id=eq.${s.id}&user_id=eq.${uid}`,'DELETE');return reply({ok:true});
   }
   if(action==='replay'){
-   if(s.replay_state!=='ready')fail(409,'The replay is not ready yet.');
+   if(!replayAvailable(s,user?.id))fail(403,'This replay has not been published by its creator.');
    const segments=await db(`live_segments?select=ordinal,duration_ms&live_id=eq.${s.id}&uploaded=eq.true&order=ordinal`);
    return reply({segments});
   }
   if(action==='replay-segment'){
-   if(s.replay_state!=='ready'||!Number.isInteger(b.ordinal))fail(409,'The replay is not ready yet.');
+   if(!replayAvailable(s,user?.id))fail(403,'This replay has not been published by its creator.');
+   if(!Number.isInteger(b.ordinal))fail(400,'Invalid replay segment.');
    const seg=(await db(`live_segments?live_id=eq.${s.id}&ordinal=eq.${b.ordinal}&uploaded=eq.true`))[0];if(!seg)fail(404,'Segment not found.');
    const signed=await storage(`object/sign/live-replays/${seg.object_path}`,'POST',{expiresIn:120});
    return reply({url:new URL(`${base}/storage/v1${signed.signedURL}`).toString()});

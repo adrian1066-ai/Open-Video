@@ -25,6 +25,57 @@ async function request(action,params={},token){
  const r=await handler(new Request('https://edge.test',{method:'POST',headers,body:JSON.stringify({action,liveId,viewerId:guest,...params})}));
  return {status:r.status,body:await r.json()};
 }
+
+test('finalizing a complete recording saves a private draft without publishing',async()=>{
+ const calls=mock({user:{id:uid},live:{...session,state:'ended',recording_enabled:true},other:{'/rest/v1/live_segments':[{ordinal:0,uploaded:true}]}});
+ assert.equal((await request('finalize',{count:1},'valid')).status,200);
+ const patch=JSON.parse(calls.find(c=>c.method==='PATCH').body);
+ assert.deepEqual(patch,{replay_state:'ready',segment_count:1});
+});
+test('private replay blocks public audience and signed segment URLs but permits creator review',async()=>{
+ const live={...session,access:'public',state:'ended',replay_state:'ready',replay_published_at:null};
+ for(const action of ['replay','replay-segment']){
+  const calls=mock({live});assert.equal((await request(action,{ordinal:0})).status,403);
+  assert.ok(!calls.some(c=>c.path.startsWith('/storage/')));
+ }
+ mock({live,user:{id:uid},other:{'/rest/v1/live_segments':[{ordinal:0,duration_ms:1000}]}});
+ assert.equal((await request('replay',{},'valid')).status,200);
+ mock({live:{...live,replay_published_at:new Date().toISOString()},other:{'/rest/v1/live_segments':[]}});
+ assert.equal((await request('replay')).status,200);
+});
+test('publishing and unpublishing are explicit creator-only actions',async()=>{
+ const live={...session,state:'ended',replay_state:'ready'};
+ mock({live});assert.equal((await request('publish-replay',{published:true})).status,401);
+ mock({live,user:{id:guest}});assert.equal((await request('publish-replay',{published:true},'valid')).status,403);
+ for(const published of [true,false]){
+  const calls=mock({live,user:{id:uid}});assert.equal((await request('publish-replay',{published},'valid')).status,200);
+  const patch=JSON.parse(calls.find(c=>c.method==='PATCH').body);
+  assert.equal(!!patch.replay_published_at,published);
+ }
+ mock({live:{...live,replay_state:'uploading'},user:{id:uid}});
+ assert.equal((await request('publish-replay',{published:true},'valid')).status,409);
+});
+test('broadcast heartbeat cannot advertise a session without a WHIP connection',async()=>{
+ const calls=mock({user:{id:uid},other:{'/rest/v1/live_connections':[]}});
+ assert.equal((await request('heartbeat',{broadcast:true},'valid')).status,409);
+ assert.ok(calls.every(c=>c.method==='GET'));
+});
+test('disabled recording rejects upload and finalize',async()=>{
+ for(const action of ['segment-upload','finalize']){
+  const calls=mock({live:{...session,state:'ended',recording_enabled:false},user:{id:uid}});
+  assert.equal((await request(action,{count:1},'valid')).status,409);
+  assert.ok(calls.every(c=>c.method==='GET'));
+ }
+});
+test('ending hides discovery even if upstream teardown must be retried',async()=>{
+ const calls=mock({user:{id:uid},other:{'/rest/v1/live_connections':[{id:guest,resource_url:'https://media.test/session'}]}});
+ assert.equal((await request('end',{},'valid')).status,503);
+ const patch=JSON.parse(calls.find(c=>c.method==='PATCH').body);
+ assert.ok(patch.ended_at);assert.equal(patch.state,undefined);
+});
+test('library requires sign-in and owner filtering',async()=>{
+ mock();assert.equal((await request('library')).status,401);
+});
 test('invalid JWT is rejected before database access',async()=>{
  const calls=mock();const r=await request('end',{},'invalid');assert.equal(r.status,401);assert.equal(calls.length,1);
 });

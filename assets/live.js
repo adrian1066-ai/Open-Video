@@ -55,6 +55,7 @@
     r.onupgradeneeded=()=>{r.result.createObjectStore('segments',{keyPath:'key'});r.result.createObjectStore('recordings',{keyPath:'id'});};
     r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(new Error('Local recording storage is unavailable.'));
   });
+  dbPromise.catch(()=>{}); // Local storage is optional when replay recording is disabled.
   async function local(store,mode,operation){const db=await dbPromise;return new Promise((resolve,reject)=>{
     const tx=db.transaction(store,mode);const request=operation(tx.objectStore(store));
     tx.oncomplete=()=>resolve(request?.result);tx.onerror=()=>reject(new Error('Could not save the local recording.'));tx.onabort=tx.onerror;
@@ -104,27 +105,28 @@
     let media=null,liveId=null;
     try{
       const {data:{user}}=await sb.auth.getUser();if(!user)throw new Error('Sign in before starting a broadcast.');
-      if(!window.MediaRecorder||!mimeType())throw new Error('This browser cannot record a replay. Use a current version of Chrome, Edge, Firefox or Safari.');
-      await dbPromise;
+      const recording=el('liveRecord').checked;
+      if(recording&&(!window.MediaRecorder||!mimeType()))throw new Error('This browser cannot record a replay. Uncheck Save a private replay to broadcast without recording.');
+      if(recording)await dbPromise;
       const title=el('liveTitle').value.trim();if(!title)throw new Error('Enter a broadcast title.');
       status('liveBroadcastStatus','Preparing camera and microphone…');
       media=await navigator.mediaDevices.getUserMedia({video:{width:{ideal:1280},height:{ideal:720},frameRate:{ideal:24}},audio:true});
       const channel=await ensureChannel();if(!channel)throw new Error('Create a channel before broadcasting.');
-      const result=await api('create',{channelId:channel.id,title,access:el('liveAccess').value});liveId=result.id;
+      const result=await api('create',{channelId:channel.id,title,access:el('liveAccess').value,category:el('liveCategory').value,country:el('liveCountry').value,city:el('liveCity').value,recordingEnabled:recording});liveId=result.id;
       el('livePreview').srcObject=media;
       status('liveBroadcastStatus','Connecting your broadcast…');
       const connection=await peer(liveId,'publish',media);
-      const state={id:liveId,title,ownerId:user.id,media,connection,mime:mimeType(),count:0,queue:Promise.resolve(),stopping:false,pending:false};
+      const state={id:liveId,title,ownerId:user.id,media,connection,recording,mime:recording?mimeType():null,count:0,queue:Promise.resolve(),stopping:false,pending:false};
       broadcast=state;
-      await saveRecording({id:state.id,ownerId:user.id,count:0,title});
-      recordSegment(state);
+      if(recording){await saveRecording({id:state.id,ownerId:user.id,count:0,title});recordSegment(state);}
       await api('heartbeat',{liveId,broadcast:true});
       state.heartbeat=setInterval(async()=>{try{await api('heartbeat',{liveId,broadcast:true});}catch(e){status('liveBroadcastStatus',errorMessage(e));stopBroadcast().catch(()=>{});}},15000);
       connection.pc.addEventListener('connectionstatechange',()=>{if(connection.pc.connectionState==='failed')stopBroadcast().catch(()=>{});});
       media.getTracks().forEach(t=>t.addEventListener('ended',()=>stopBroadcast().catch(()=>{})));
       el('liveStop').disabled=false;el('liveTitle').disabled=true;el('liveAccess').disabled=true;
+      ['liveCategory','liveCountry','liveCity','liveRecord'].forEach(id=>el(id).disabled=true);
       el('liveOnAir').hidden=false;
-      status('liveBroadcastStatus','You are live · replay recording in parallel');discover();
+      status('liveBroadcastStatus',recording?'You are live · private replay recording in parallel':'You are live · recording is off');discover();
     }catch(e){
       if(broadcast){await stopBroadcast().catch(()=>{});}else{media?.getTracks().forEach(t=>t.stop());if(liveId)await api('end',{liveId}).catch(()=>{});}
       status('liveBroadcastStatus',errorMessage(e));
@@ -133,22 +135,28 @@
   async function stopBroadcast(){
     const state=broadcast;if(!state||state.finishing)return;state.finishing=true;state.stopping=true;
     clearInterval(state.heartbeat);clearTimeout(state.segmentTimer);el('liveStop').disabled=true;
-    status('liveBroadcastStatus','Ending broadcast and saving replay…');
+    status('liveBroadcastStatus',state.recording?'Ending broadcast and saving private replay…':'Ending broadcast…');
+    // Stop public discovery promptly, independently of local recording/upload completion.
+    const ending=api('end',{liveId:state.id}).then(()=>true).catch(()=>false);
     try{
       if(state.recorder?.state==='recording')state.recorder.stop();
       await state.segmentDone;
     }catch{state.recordingFailed=true;}
     state.media.getTracks().forEach(t=>t.stop());await disconnect(state.connection);
-    let ended=false;try{await api('end',{liveId:state.id});ended=true;}catch{}
+    let ended=await ending;if(!ended){try{await api('end',{liveId:state.id});ended=true;}catch{}}
     await state.queue;
-    const remaining=(await local('segments','readonly',s=>s.getAll())).filter(s=>s.liveId===state.id);
     try{
+      if(!state.recording){if(!ended)throw new Error('Camera stopped. The broadcast will expire shortly; refresh to check its status.');status('liveBroadcastStatus','Broadcast ended · no replay was recorded');}
+      else{
+      const remaining=(await local('segments','readonly',s=>s.getAll())).filter(s=>s.liveId===state.id);
       if(!ended||remaining.length||state.recordingFailed)throw new Error('Recording saved on this device. Use Recover recordings to finish uploading.');
       await api('finalize',{liveId:state.id,count:state.count});
       await local('recordings','readwrite',s=>s.delete(state.id));
-      status('liveBroadcastStatus','Broadcast ended · replay is ready in Live discovery');
+      status('liveBroadcastStatus','Broadcast ended · private replay is ready in My recordings. Review it before publishing.');
+      }
     }catch(e){status('liveBroadcastStatus',errorMessage(e));}
     broadcast=null;el('livePreview').srcObject=null;el('liveOnAir').hidden=true;
+    ['liveCategory','liveCountry','liveCity','liveRecord'].forEach(id=>el(id).disabled=false);
     el('liveStart').disabled=false;el('liveTitle').disabled=false;el('liveAccess').disabled=false;discover();
   }
   async function recover(){
@@ -165,16 +173,29 @@
         if(!rec.count)continue;
         await api('finalize',{liveId:rec.id,count:rec.count});await local('recordings','readwrite',s=>s.delete(rec.id));
       }
-      status('liveBroadcastStatus','Saved recordings recovered.');discover();
+      status('liveBroadcastStatus','Saved recordings recovered as private drafts. Review them in My recordings.');discover();
     }catch(e){status('liveBroadcastStatus',errorMessage(e));}finally{loading=false;el('liveRecover').disabled=false;}
   }
   async function discover(){
     try{
-      const {sessions}=await api('list');
+      const [{sessions},replays]=await Promise.all([api('list'),api('replays')]);
       el('liveGrid').innerHTML=sessions.map(s=>`<article class="video-card"><div class="thumb"><div class="thumb-art" style="--a:#15345e;--b:#413172"><div class="thumb-text">${s.state==='live'?'LIVE':s.state==='starting'?'STARTING':'REPLAY'}</div></div><span class="duration">${s.access==='subscribers'?'Subscribers':'Public'}</span></div><div class="video-meta"><div class="mini-avatar"></div><div><div class="video-title">${escape(s.title)}</div><div class="subtext">${escape(s.channel_name)} · ${s.viewers} watching · ${s.likes} likes</div><button class="ghost" data-live-id="${s.id}" data-live-title="${escape(s.title)}" data-live-replay="${s.state==='ended'}">${s.state==='ended'?'Watch replay':'Watch live'}</button></div></div></article>`).join('');
-      status('liveDiscoveryStatus',sessions.length?'Live broadcasts and saved replays':'No broadcasts yet. Start the first one from your channel.');
+      status('liveDiscoveryStatus',sessions.length?'Active live broadcasts':'No active broadcasts. Start one from your channel.');
       el('liveGrid').querySelectorAll('[data-live-id]').forEach(btn=>btn.onclick=()=>open(btn.dataset.liveId,btn.dataset.liveReplay==='true',btn.dataset.liveTitle));
+      renderRecordings('liveReplayGrid',replays.sessions,false);
+      await library();
     }catch(e){status('liveDiscoveryStatus',errorMessage(e));}
+  }
+  function renderRecordings(target,sessions,owner){
+    el(target).innerHTML=sessions.map(s=>`<article class="studio-card"><h3>${escape(s.title)}</h3><p class="subtext">${escape(s.channel_name)} · ${escape(s.category||'Community')} ${escape([s.city,s.country].filter(Boolean).join(', '))}</p><p class="subtext">${s.access==='subscribers'?'Channel subscribers':'Public audience'} · ${s.replay_published_at?'Published':s.replay_state==='ready'?'Private draft':escape(s.replay_state)}</p>${s.replay_state==='ready'?`<div class="live-actions"><button class="ghost" data-review="${s.id}">Watch replay</button>${owner?`<button class="primary" data-publish="${s.id}" data-published="${!!s.replay_published_at}">${s.replay_published_at?'Unpublish replay':'Publish replay'}</button>`:''}</div>`:''}</article>`).join('');
+    el(target).querySelectorAll('[data-review]').forEach(btn=>btn.onclick=()=>open(btn.dataset.review,true,sessions.find(s=>s.id===btn.dataset.review).title));
+    el(target).querySelectorAll('[data-publish]').forEach(btn=>btn.onclick=async()=>{btn.disabled=true;try{await api('publish-replay',{liveId:btn.dataset.publish,published:btn.dataset.published!=='true'});await discover();}catch(e){toast(errorMessage(e));btn.disabled=false;}});
+  }
+  async function library(){
+    const {data:{session}}=await sb.auth.getSession();
+    if(!session){el('liveLibrary').innerHTML='';status('liveLibraryStatus','Sign in to see your recordings.');return;}
+    try{const {sessions}=await api('library');renderRecordings('liveLibrary',sessions.filter(s=>s.state==='ended'),true);status('liveLibraryStatus','Only you can see unpublished recordings. Publishing keeps the original audience setting.');}
+    catch(e){status('liveLibraryStatus',errorMessage(e));}
   }
   async function stopWatching(){
     watchGeneration++;const old=watching;watching=null;
@@ -186,10 +207,11 @@
     liked=data.liked;status('liveAudience',`${data.viewers} watching · ${data.likes} likes`);
     el('liveLike').textContent=`${liked?'♥':'♡'} Like`;
     el('liveChat').innerHTML=data.messages.map(m=>`<div class="comment"><strong>${escape(m.display_name)}</strong><p>${escape(m.body)}</p></div>`).join('')||'<p class="subtext">No messages yet.</p>';
-    if(data.state==='ended'&&!state.replay){status('liveWatchStatus',data.replay_state==='ready'?'Broadcast ended. Replay is ready.':'Broadcast ended. The replay is being saved.');
-      el('liveReplayButton').hidden=data.replay_state!=='ready';
+    if(data.state==='ended'&&!state.replay){status('liveWatchStatus',data.replay_available?'Broadcast ended. Replay is ready.':'Broadcast ended. No published replay is available.');
+      el('liveReplayButton').hidden=!data.replay_available;
       clearInterval(state.heartbeat);
     }
+    if(state.replay&&!data.replay_available){await stopWatching();throw new Error('This replay is no longer published.');}
     el('liveSend').disabled=data.state==='ended'||state.replay;
   }
   async function open(liveId,replay=false,title='OpenVideo Live'){
