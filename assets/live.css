@@ -1,3 +1,5 @@
+.main{min-width:0}
+.hero-actions{flex-wrap:wrap}
 .live-media{width:100%;aspect-ratio:16/9;background:#05070d;border-radius:18px;object-fit:contain;display:block}
 .live-actions{display:flex;gap:10px;flex-wrap:wrap;margin:16px 0}
 .live-layout{display:grid;grid-template-columns:minmax(0,2fr) minmax(260px,1fr);gap:22px}
