@@ -4,7 +4,9 @@
 
 Existing OpenVideo was extended in place. The WHIP/WHEP and parallel browser-recording architecture is preserved. Stripe and all real payments remain explicitly postponed.
 
-The previous turn stopped because automatic approval review exhausted its usage allowance, not because tests failed. The last integrated Live browser run subsequently completed successfully. Frontend publication is being verified separately; backend deployment alone does not publish the website.
+Published through PR #3, merged as f2fff690378f320f1db0b5d039457dbb89fd3383. GitHub Pages run 35756809186 succeeded. The public index, Live, community and safety scripts matched the verified source. A real two-account Live run on the public URL passed WHIP/WHEP video/audio, chat/likes/presence, stop, private multi-part replay, publication/unpublication and recording-disabled shutdown. All 32 Node tests and the app upload/safety/inbox regression passed again on September 22.
+
+The public mobile smoke exposed a pre-existing minimum-width overflow on Home. A two-rule layout correction was verified across all public routes at 1440px and 390px, with the logo loaded and no browser exceptions. Streaming code was not changed by this correction. Test database check: zero unfinished host broadcasts and zero published test replays.
 
 ## Implemented and verified
 
