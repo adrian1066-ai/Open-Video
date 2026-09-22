@@ -1,5 +1,5 @@
 export const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-export const fresh = s => !s.ended_at && ['starting','live'].includes(s.state) && Date.now()-Date.parse(s.heartbeat_at)<60000;
+export const fresh = s => !s.safety_hidden && !s.ended_at && ['starting','live'].includes(s.state) && Date.now()-Date.parse(s.heartbeat_at)<60000;
 export const replayAvailable = (s,userId) => s.state==='ended' && s.replay_state==='ready' && (s.owner_id===userId || !!s.replay_published_at);
 export function canWatch(session, userId, subscription) {
   return session.access === 'public' || session.owner_id === userId ||

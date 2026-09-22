@@ -29,6 +29,8 @@ async function sessionFor(liveId:string) {
  return rows[0]||fail(404,'Live session not found.');
 }
 async function authorize(s:any,userId:string|null) {
+ if(s.safety_hidden&&s.owner_id!==userId)fail(403,'This content is unavailable while under review.');
+ if(userId&&userId!==s.owner_id&&await db('rpc/openvideo_blocked_pair','POST',{p_a:userId,p_b:s.owner_id}))fail(403,'This interaction is unavailable.');
  let sub=null;
  if(s.access==='subscribers'&&userId&&s.owner_id!==userId)sub=(await db(`live_subscriptions?channel_id=eq.${s.channel_id}&user_id=eq.${userId}&limit=1`))[0];
  if(!canWatch(s,userId,sub))fail(403,'An active subscription to this channel is required.');
@@ -58,8 +60,10 @@ Deno.serve(async(req:Request)=>{
   const viewerKey=user?.id?`user:${user.id}`:`guest:${id(b.viewerId)}`;
   if(['list','replays','library'].includes(action)) {
    const filter=action==='library'?`owner_id=eq.${requireUser()}`:action==='replays'?'state=eq.ended&replay_state=eq.ready&replay_published_at=not.is.null':`state=eq.live&ended_at=is.null&heartbeat_at=gt.${query(new Date(Date.now()-60000).toISOString())}`;
-   const rows=await db(`live_sessions?select=*&${filter}&order=created_at.desc&limit=60`);
-   const visible=action==='list'?rows.filter((s:any)=>s.state==='live'&&fresh(s)):rows;
+   const rows=await db(`live_sessions?select=*&${filter}${action==='library'?'':'&safety_hidden=eq.false'}&order=created_at.desc&limit=60`);
+   const blocked=user?await db(`user_blocks?or=(blocker_id.eq.${user.id},blocked_id.eq.${user.id})`):[];
+   const blockedIds=new Set(blocked.map((r:any)=>r.blocker_id===user.id?r.blocked_id:r.blocker_id));
+   const visible=rows.filter((s:any)=>(action!=='list'||(s.state==='live'&&fresh(s)))&&(action==='library'||!blockedIds.has(s.owner_id)));
    const stats=visible.length?await db('rpc/openvideo_live_stats','POST',{p_ids:visible.map((s:any)=>s.id)}):[];
    const channels=visible.length?await db(`channels?select=id,name&id=in.(${[...new Set(visible.map((s:any)=>s.channel_id))].join(',')})`):[];
    return reply({sessions:visible.map((s:any)=>publicSession(s,channels.find((c:any)=>c.id===s.channel_id),stats.find((c:any)=>c.live_id===s.id)))});
@@ -163,15 +167,16 @@ Deno.serve(async(req:Request)=>{
   await authorize(s,user?.id);
   if(action==='state'){
    const stats=(await db('rpc/openvideo_live_stats','POST',{p_ids:[s.id]}))[0];
-   const messages=await db(`live_messages?select=id,display_name,body,created_at&live_id=eq.${s.id}&order=id.desc&limit=60`);
+   const blocks=user?await db(`user_blocks?or=(blocker_id.eq.${user.id},blocked_id.eq.${user.id})`):[];
+   const ignored=blocks.map((r:any)=>r.blocker_id===user.id?r.blocked_id:r.blocker_id);
+   const messages=await db(`live_messages?select=id,user_id,display_name,body,created_at&live_id=eq.${s.id}&safety_hidden=eq.false${ignored.length?`&user_id=not.in.(${ignored.join(',')})`:''}&order=id.desc&limit=60`);
    const liked=user?(await db(`live_likes?live_id=eq.${s.id}&user_id=eq.${user.id}`)).length>0:false;
-   return reply({state:fresh(s)?s.state:'ended',replay_available:replayAvailable(s,user?.id),replay_state:replayAvailable(s,user?.id)?s.replay_state:'unavailable',...stats,messages:messages.reverse(),liked});
+   return reply({title:s.title,category:s.category,country:s.country,city:s.city,channel_id:s.channel_id,started_at:s.started_at,state:fresh(s)?s.state:'ended',replay_available:replayAvailable(s,user?.id),replay_state:replayAvailable(s,user?.id)?s.replay_state:'unavailable',...stats,messages:messages.reverse(),liked});
   }
   if(action==='chat'){
    const uid=requireUser();if(!fresh(s))fail(409,'This live chat has ended.');
    const body=String(b.body||'').trim();if(!body||body.length>1000)fail(400,'Messages must contain 1–1,000 characters.');
-   const recent=await db(`live_messages?select=id&user_id=eq.${uid}&created_at=gt.${query(new Date(Date.now()-2000).toISOString())}&limit=1`);
-   if(recent.length)fail(429,'Wait a moment before sending another message.');
+   if(!await db('rpc/openvideo_consume_limit','POST',{p_actor:uid,p_scope:'live-chat',p_limit:1,p_seconds:2}))fail(429,'Wait a moment before sending another message.');
    const profile=(await db(`profiles?select=display_name&id=eq.${uid}`))[0];
    await db('live_messages','POST',{live_id:s.id,user_id:uid,display_name:String(profile?.display_name||'Viewer').slice(0,80),body});return reply({ok:true});
   }

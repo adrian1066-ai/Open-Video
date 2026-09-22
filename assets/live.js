@@ -201,15 +201,24 @@
     watchGeneration++;const old=watching;watching=null;
     if(old){clearInterval(old.poll);clearInterval(old.heartbeat);await disconnect(old.connection);}
     const player=el('livePlayer');player.pause();player.srcObject=null;player.removeAttribute('src');player.onended=null;player.load();
+    el('liveReconnect').hidden=true;
   }
   async function refreshState(state){
     const data=await api('state',{liveId:state.id});if(watching!==state)return;
+    state.ended=data.state==='ended';
+    if(data.title){state.title=data.title;status('liveWatchTitle',data.title);}
+    state.channelId=data.channel_id;
+    status('liveWatchDetails',[data.category,data.city,data.country].filter(Boolean).join(' · '));
     liked=data.liked;status('liveAudience',`${data.viewers} watching · ${data.likes} likes`);
     el('liveLike').textContent=`${liked?'♥':'♡'} Like`;
-    el('liveChat').innerHTML=data.messages.map(m=>`<div class="comment"><strong>${escape(m.display_name)}</strong><p>${escape(m.body)}</p></div>`).join('')||'<p class="subtext">No messages yet.</p>';
+    el('liveChat').innerHTML=data.messages.map(m=>`<div class="comment"><strong>${escape(m.display_name)}</strong><p>${escape(m.body)}</p><button class="ghost" data-report-message="${escape(m.id)}">Report</button>${m.user_id?` <button class="ghost" data-block-user="${escape(m.user_id)}">Block</button>`:''}</div>`).join('')||'<p class="subtext">No messages yet.</p>';
+    el('liveChat').querySelectorAll('[data-report-message]').forEach(b=>b.onclick=()=>window.OpenVideoSafety?.report('live-comment',b.dataset.reportMessage));
+    el('liveChat').querySelectorAll('[data-block-user]').forEach(b=>b.onclick=()=>window.OpenVideoSafety?.blockUser(b.dataset.blockUser));
     if(data.state==='ended'&&!state.replay){status('liveWatchStatus',data.replay_available?'Broadcast ended. Replay is ready.':'Broadcast ended. No published replay is available.');
       el('liveReplayButton').hidden=!data.replay_available;
       clearInterval(state.heartbeat);
+      el('liveReconnect').hidden=true;
+      if(state.connection){const old=state.connection;state.connection=null;await disconnect(old);}
     }
     if(state.replay&&!data.replay_available){await stopWatching();throw new Error('This replay is no longer published.');}
     el('liveSend').disabled=data.state==='ended'||state.replay;
@@ -219,9 +228,11 @@
     go('live-watch');location.hash=`live-${replay?'replay-':''}${liveId}`;
     status('liveWatchTitle',title);status('liveWatchStatus',replay?'Loading replay…':'Connecting to broadcast…');
     el('liveReplayButton').hidden=true;el('liveSegments').hidden=true;
+    el('liveReconnect').hidden=true;el('liveReconnect').onclick=()=>open(liveId,replay,title);
     const state={id:liveId,replay,title};watching=state;
     try{
       await refreshState(state);
+      if(!replay&&state.ended){state.poll=setInterval(()=>refreshState(state).catch(()=>{}),4000);return;}
       if(replay){
         const result=await api('replay',{liveId});if(generation!==watchGeneration)return;
         state.segments=result.segments;state.ordinal=0;
@@ -231,13 +242,20 @@
       }else{
         const connection=await peer(liveId,'play',null,el('livePlayer'));
         if(generation!==watchGeneration){await disconnect(connection);return;}state.connection=connection;
+        connection.pc.addEventListener('connectionstatechange',()=>{
+          if(watching!==state||state.ended)return;
+          const broken=['failed','disconnected'].includes(connection.pc.connectionState);
+          el('liveReconnect').hidden=!broken;
+          if(broken)status('liveWatchStatus','Connection interrupted. Check your network and reconnect.');
+          else if(connection.pc.connectionState==='connected')status('liveWatchStatus','Live · enable sound using the player controls');
+        });
         await api('heartbeat',{liveId});
         state.heartbeat=setInterval(()=>api('heartbeat',{liveId}).catch(e=>{if(e.status===403||e.status===401){stopWatching();status('liveWatchStatus',errorMessage(e));}}),15000);
         status('liveWatchStatus','Live · enable sound using the player controls');
       }
       if(generation!==watchGeneration)return;
       state.poll=setInterval(()=>refreshState(state).catch(e=>{if(e.status===403||e.status===401){stopWatching();}status('liveWatchStatus',errorMessage(e));}),4000);
-    }catch(e){if(generation===watchGeneration){await stopWatching();status('liveWatchStatus',errorMessage(e));}}
+    }catch(e){if(generation===watchGeneration){await stopWatching();status('liveWatchStatus',errorMessage(e));el('liveReconnect').hidden=[401,403,404,409].includes(e.status);}}
   }
   async function playSegment(state,ordinal){
     const result=await api('replay-segment',{liveId:state.id,ordinal});if(watching!==state)return;
@@ -259,5 +277,5 @@
   sb.auth.onAuthStateChange(event=>{if(event==='SIGNED_OUT'){stopWatching();if(broadcast)stopBroadcast();}});
   const route=location.hash.slice(1),match=route.match(/^live-(replay-)?([0-9a-f-]{36})$/i);
   if(match)open(match[2],!!match[1]);else if(route==='live'){go('live');discover();}
-  window.OpenVideoLive={open,discover};
+  window.OpenVideoLive={open,discover,list:()=>api('list'),getWatching:()=>watching?{id:watching.id,channelId:watching.channelId}:null};
 })();

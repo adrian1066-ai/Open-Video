@@ -1,3 +1,11 @@
 [functions.openvideo-live]
 # Public discovery/playback is supported; each authenticated action validates the JWT through Auth.
 verify_jwt = false
+
+[functions.openvideo-safety]
+# Handler verifies every request with Supabase Auth; there are no anonymous actions.
+verify_jwt = false
+
+[functions.openvideo-community]
+# Every request is authenticated through Supabase Auth before service-only RPC execution.
+verify_jwt = false

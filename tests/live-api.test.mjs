@@ -15,6 +15,8 @@ function mock({user=null,live=session,subscription=[],other={}}={}){
   if(u.pathname==='/auth/v1/user')return Response.json(user||{error:'Invalid JWT'},{status:user?200:401});
   if(u.pathname==='/rest/v1/live_sessions')return Response.json([live]);
   if(u.pathname==='/rest/v1/live_subscriptions')return Response.json(subscription);
+  if(u.pathname==='/rest/v1/rpc/openvideo_blocked_pair')return Response.json(false);
+  if(u.pathname==='/rest/v1/user_blocks')return Response.json([]);
   if(u.pathname in other)return Response.json(other[u.pathname]);
   throw Error('Unexpected privileged request: '+u.pathname);
  };
@@ -94,7 +96,7 @@ test('another account cannot modify the broadcaster session',async()=>{
 test('subscriber checks protect media, chat, likes, state and replay',async()=>{
  for(const action of ['signal','heartbeat','chat','like','state','replay','replay-segment']){
   const calls=mock({user:{id:guest}});const r=await request(action,{kind:'play',sdp:'v=0',liked:true},'valid');
-  assert.equal(r.status,403,action);assert.ok(calls.every(c=>c.method==='GET'));
+  assert.equal(r.status,403,action);assert.ok(calls.every(c=>c.method==='GET'||c.path==='/rest/v1/rpc/openvideo_blocked_pair'));
  }
 });
 test('expired or wrong-channel membership never grants playback',async()=>{

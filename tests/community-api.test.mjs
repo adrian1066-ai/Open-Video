@@ -1,0 +1,11 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+let handler;globalThis.Deno={env:{get:k=>k==='SUPABASE_URL'?'https://db.test':'server-secret'},serve:f=>handler=f};
+await import('../supabase/functions/openvideo-community/index.ts');
+const uid='11111111-1111-4111-8111-111111111111';
+function mock(valid=true,anonymous=false,dbResult={ok:true},status=200){const calls=[];globalThis.fetch=async(url,o={})=>{calls.push({url,body:o.body});return url.endsWith('/auth/v1/user')?Response.json({id:uid,is_anonymous:anonymous},{status:valid?200:401}):Response.json(dbResult,{status});};return calls;}
+async function request(body,auth=true){const r=await handler(new Request('https://edge.test',{method:'POST',headers:{'Content-Type':'application/json',...(auth?{Authorization:'Bearer token'}:{})},body:JSON.stringify(body)}));return{status:r.status,body:await r.json()};}
+test('community rejects missing, invalid and anonymous accounts',async()=>{mock();assert.equal((await request({},false)).status,401);mock(false);assert.equal((await request({})).status,401);mock(true,true);assert.equal((await request({})).status,401);});
+test('community never trusts a client supplied actor',async()=>{const calls=mock();assert.equal((await request({module:'challenge',action:'accept',p_actor:'attacker',data:{id:uid,p_actor:'attacker'}})).status,200);assert.equal(JSON.parse(calls[1].body).p_actor,uid);});
+test('community has a fixed RPC/action allowlist',async()=>{const calls=mock();for(const module of ['openvideo_live_config','__proto__','constructor'])assert.equal((await request({module,action:'list'})).status,400);assert.equal((await request({module:'progress',action:'award'})).status,400);assert.ok(calls.every(c=>c.url.endsWith('/auth/v1/user')));});
+test('database failures never expose internal details',async()=>{mock(true,false,{code:'XX000',message:'server-secret internal sql'},400);const r=await request({module:'challenge',action:'list'});assert.equal(r.status,400);assert.ok(!JSON.stringify(r).includes('server-secret'));});
+test('duplicate proof is reported as a conflict',async()=>{mock(true,false,{code:'23505',message:'private index details'},400);assert.equal((await request({module:'challenge',action:'submit'})).status,409);});
