@@ -1,52 +1,45 @@
-# OpenVideo progress
+# OpenVideo progress — 2026-09-22
 
-## Scope and baseline — 2026-09-19
+## Current release status
 
-Source: supplied Open-Video-main.zip, compared with the current main branch (8f98f4d). Preserve existing design and features; implement Phase 1 before payment work. No existing users, channels, subscriptions or uploads removed.
+Existing OpenVideo was extended in place. The WHIP/WHEP and parallel browser-recording architecture is preserved. Stripe and all real payments remain explicitly postponed.
 
-Architecture: static index.html and assets on GitHub Pages; Supabase Auth, Postgres and Storage; openvideo-live Edge Function brokers Cloudflare WHIP/WHEP. Browser MediaRecorder creates parallel, independent 30-second replay files, persisted in IndexedDB before upload. Cloudflare WebRTC does not automatically record these sessions.
+The previous turn stopped because automatic approval review exhausted its usage allowance, not because tests failed. The last integrated Live browser run subsequently completed successfully. Frontend publication is being verified separately; backend deployment alone does not publish the website.
 
-## Initial audit
+## Implemented and verified
 
-- Real integrations present: authentication, video uploads and signed playback, creator profiles/media, likes/comments/follows, Following, Studio content and Live. These existing non-Live features were reviewed in source; not all were exercised end-to-end in this phase.
-- Baseline Live tests: 14/14 passed. Existing implementation supports WHIP publishing, signed WHEP playback, polling chat/likes/presence and parallel recording. Prior verification is not a substitute for retesting current changes.
-- Gaps: all finalized recordings automatically appeared in discovery; recording was mandatory; missing category/coarse location/start timestamp; starting broadcasts appeared before publishing connected; discovery limited rows before filtering active state.
-- Monetization buttons and several analytics/admin/clips/promotion surfaces remain demonstrations. They do not collect real money. Stripe has not been configured.
-- Live tables have RLS and no client grants; requests are authorized in the Edge Function. The service key and Vault media/signing configuration remain server-only. verify_jwt=false is intentional with current publishable keys: the handler independently verifies supplied bearer tokens against Auth.
-- Current capacity is one simultaneous broadcast because only one Cloudflare Live Input is configured.
-- Legacy root SQL patches exist, but a complete original schema bootstrap is absent. A fresh project is not reproducible using Live migrations alone.
+- Stabilization: real community Home/Explore feeds, truthful empty search results, file type/size checks, safe profile/channel/video column grants, and clearer prototype labels. Real uploads, playback, comments, likes, follows and Following passed browser regression.
+- Live: title/category/coarse location, reconnect control, ended states, public/subscriber authorization, chat, likes, audience estimates, optional parallel recording, private drafts and explicit replay publication.
+- Safety: reports for videos/Lives/comments/users, blocking, appointed moderator queue/review/audit, atomic rate limits, and restrictive hidden/blocked/age-restricted content policies. User specifically approved the safety migration, which was applied. Real two-account report/block/unblock and moderator-access denial passed.
+- Notifications: existing inbox reused; owner-only reads and mark-read, follow/comment/Live/request/challenge/mission events, deduplication, opt-in country/city request alerts. Cross-account isolation and forged-notification denial passed. Database deadline job ran successfully.
+- Challenges: staff-issued Live/video challenges, global/location/XP scopes, acceptance/deadlines/history, proof submission and independent moderator approval. A prerecorded upload cannot satisfy Live proof. Real Live proof submission passed. Sponsored challenges remain reserved.
+- XP: immutable client-inaccessible award ledger, configurable levels, one award per source. Transaction tests verified approval awards and duplicate prevention.
+- Requests: voluntary acceptance, new public Live association, start/completion/cancel/expiry and inbox events. Real browser creation, acceptance, area alerts and full Live-linked completion passed.
+- Live Map: World → Country → City filtering from creator-shared text, no device coordinates. Real Live appeared with its country/city.
+- Missions: configured count/type of new approved challenges, deadline/progress/history, retained proof associations and XP. Transaction tests verified two approved challenges complete one mission, with no duplicate award or reusable mission evidence.
+- Multi-View: event grouping, owner-controlled Live membership and existing-player perspective selection. Real event playback used one media connection; other creators cannot attach someone else's Live.
+- 32 Node tests passed before the interruption. SQL regression transactions were run as service_role and rolled back. Browser community routes passed at 390px without overflow or exceptions after correcting the new navigation wrapping.
+- Most recent integrated media test: real WHIP connection, WHEP decoded video and received audio, chat/likes/presence, Live challenge proof, request/event/map associations, follower notification, stop, private replay, multi-part playback, explicit publish/unpublish, and recording-disabled start/stop all passed.
 
-## Phase 1 changes
+## Deployed backend
 
-- Additive migration: category, optional manually entered country/city, started_at, recording_enabled and replay_published_at. Existing access/state/ended_at represent visibility/status/end time; no schema rename or data deletion.
-- Finalize saves private drafts. Only the creator can explicitly publish/unpublish a completed replay. Private drafts cannot obtain signed playback URLs from another account or guest. Published subscriber replays still require the correct active membership.
-- Separate active discovery, published replays and owner recording library; public queries filter before limiting. End marks the session unavailable before media cleanup, retaining the input lease until teardown succeeds.
-- Broadcast heartbeat requires an established publisher connection. Replay recording can be disabled without requiring MediaRecorder/local recording storage.
-- Live form and library use existing classes, colors and layout. Other views remain unchanged.
-- Files: index.html, assets/live.js, core.mjs, Edge Function index.ts, new SQL migration, Live tests, README.md, LIVE.md and this log.
+Migrations through legacy_interaction_hardening are applied; local migration names must match remote history. Edge Functions: openvideo-live v5, openvideo-safety v1, openvideo-community v2. Service-only community RPCs derive identity from an Auth-verified request, never a client actor field. Secrets and WHIP remain server-only.
 
-## Verification and remaining work
+The unused unlimited view counter was revoked. Read-only like/follow helpers now honor client access and do not update counts on page load. Qualified view writes are serialized and respect hidden/blocked/age-restricted content. Guest browser-key analytics remain susceptible to identity rotation and never award XP.
 
-- 21/21 Node tests pass: existing authorization/token rules plus private draft protection, owner-only publication, disabled recording, publisher connection requirement, immediate end visibility and authenticated library access. Frontend syntax check passes.
-- Real Edge/Supabase/Cloudflare browser runs passed with separate host/viewer accounts: WHIP connected, WHEP decoded video and received audio packets, persisted chat/likes, counted viewer heartbeat, metadata/start time, multi-part replay, explicit publish/unpublish, and recording-disabled start/stop.
-- A second run intentionally returned upload failures; recovery succeeded from IndexedDB and finalized a private draft. Test recordings remain private; no existing accounts/channels/subscriptions were deleted.
-- Mobile viewport 390×844 passed without horizontal overflow; screenshot reviewed. Synthetic canvas/audio were used instead of a physical webcam. The reusable browser harness is tests/live-browser.cjs; credentials are supplied through a private external file.
-- Comparison against the supplied ZIP confirms index.html outside the Live section is unchanged apart from final newline normalization. This is a preservation check, not a claim that every legacy workflow was tested.
-- Cloudflare input Open Video Test Live remains enabled; WHIP/WHEP configured and signed playback required. No credential values were printed or committed.
-- Migration 20260920040138_live_creator_replay_control applied; openvideo-live Edge Function version 3 deployed. Live tables retain their closed client permissions. Security advisors show existing legacy function/password warnings and intentional server-only Live RLS informational notices.
-- Released through PR #2, merged as b0145ba21ecba0f5f15a452fb6194388aedfd180. GitHub Pages run 35488577041 completed successfully. Public-site smoke passed: Live form/discovery, hidden private replays, 390px layout, Home, Explore and Auth, with no browser exceptions. Final database check: three ended private ready test replays and three ended recording-disabled tests; zero published test recordings.
+## Remaining launch work and honest limits
 
-Physical desktop-camera to separate phone on a different network still requires an actual device check. Automated mobile viewport tests cannot prove all phone/browser/network combinations.
+- Physical camera-to-separate-phone verification, ideally across networks, remains unverified. Synthetic camera/audio and a mobile viewport are not physical-device proof.
+- Only one Cloudflare input is configured: one concurrent broadcaster. Multi-View supports grouping/switching, but concurrent perspectives require a capacity upgrade and concurrent-media testing.
+- Staff moderation operations, age-verification/onboarding, controlled signup/email-confirmation/recovery, password protections and final security-advisor review remain launch work.
+- Public search currently covers the loaded recent videos. Inbox and community endpoints return bounded recent lists. Large-audience notification fan-out needs queuing and pagination.
+- Live proof verifies association/start time, not camera authenticity or actual geographic location. Mission rules currently support number/type of approved challenges.
+- Existing analytics, wallet, promotion and related prototype surfaces still contain clearly labeled demonstrations. No actual financial balances or transactions.
+- Replays require the broadcasting tab/device to remain available. Recovery is on the original device/account. Already-issued signed links last until expiry; downloaded media cannot be revoked. Blocking/moderation does not guarantee immediate shutdown of already-established media.
+- Legacy SQL patches are not a complete clean-project schema bootstrap; backup/restore and deployment reproducibility need an operations pass.
+- Never delete existing user accounts, channels, subscriptions or recordings as cleanup. Test uploads/replays are retained privately; test requests/events are closed.
+- Payments are last: US account holder, USD, platform 20%, creator bears processing fees are recorded business decisions only. No Stripe setup until new explicit approval after launch work.
 
-Device check: sign in on a computer, open Live, allow camera/microphone and start a public broadcast. On a separate phone open the same site, select the active broadcast and enable sound in the player. Sign in to test chat/likes. End on the computer; verify it leaves active discovery and stays out of Published replays until the creator chooses Publish replay. Use different networks to exercise the real connection path. Report browser/device and visible error if it fails; never share publishing credentials.
+## Earlier release
 
-Replay limitations: browser tab must stay open; interrupted uploads can recover on the same device/account; independent parts may have brief gaps. Already issued replay links expire after 120 seconds; unpublishing cannot revoke bytes already downloaded. Creator library lists the latest 60 sessions.
-
-## Next phases and launch blockers
-
-Phase 2: user confirmed target markets Latin America (including Brazil, Mexico and Argentina), the United States and Spain; charging currency is USD. This describes intended markets, not confirmed payment-provider or cross-border payout availability. The Stripe account holder's legal country and platform commission remain to be specified, along with secure provider/Connect configuration and refund/payout rules. No live charges or fabricated payment success. Plan for server-created checkout, verified idempotent webhooks, an immutable transaction ledger, subscription entitlements and payout reconciliation.
-
-User action: verify one actual desktop-camera broadcast from a separate phone/network, and specify the Stripe account holder's legal country and platform commission for Phase 2. Stripe test credentials/webhook signing secrets must be configured through a trusted server-secret workflow, never pasted into chat or committed. Payment work is not represented as complete while these inputs are missing.
-
-Before broad public launch, audit legacy profile role-column privileges/public profile fields, video bucket limits, existing SECURITY DEFINER functions and Auth password protections. Live chat throttling currently uses a non-atomic time-window query, requiring stronger limits in Phase 3. Subscriber-only media authorization is enforced; this is not complete DRM or production moderation. Do not claim the seven-phase roadmap is finished.
-
+PR #2 delivered optional private replays and publication controls, merged as b0145ba21ecba0f5f15a452fb6194388aedfd180. The baseline before this release was bfa792650aa47ce59d9497d6f4b81966834a021a. No design rebuild or streaming-provider replacement was performed.

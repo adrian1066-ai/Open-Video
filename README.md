@@ -45,3 +45,13 @@ node --check assets/live.js
 Optional browser integration test: install Playwright in your development environment, set `OPENVIDEO_TEST_USERS_PATH` to a private JSON file with two dedicated accounts (`[{"email":"...","password":"..."},{"email":"...","password":"..."}]`, host first), then run `node tests/live-browser.cjs`. Set `BROWSER_EXECUTABLE` to your installed Chromium/Edge executable when needed and `PLAYWRIGHT_MODULE` if Playwright is outside normal module resolution. Set `LIVE_TEST_RECOVERY=1` to simulate failed uploads. This test uses the configured real backend and media service, briefly publishes synthetic test footage, then unpublishes it; run only on an authorized test environment. It retains completed recordings privately and writes screenshots to a temporary directory. Never commit the credentials file.
 
 OPENVIDEO_PROGRESS.md distinguishes automated/live-service checks from remaining physical-device verification. Payment and other demonstration interfaces are not real transactions. Stripe is not configured; no customer is charged.
+
+## Current community preview
+
+The app extends the existing interface with reporting/blocking/moderation, an in-app inbox, challenges, XP/levels, voluntary requests, country/city Live discovery, missions and event perspectives. Deploy openvideo-safety and openvideo-community alongside openvideo-live after their migrations. Every safety/community action validates the account token before calling service-only functions. Moderator roles are server-managed.
+
+Notifications reuse the original inbox. A database job checks deadlines once per minute. Push is not enabled. Challenges require new creator-owned proof and independent staff approval; Live proof verifies timing, not camera authenticity or location. Missions count newly approved challenges. XP awards are idempotent and level thresholds are configurable.
+
+Multi-View groups existing Lives and switches the same player. One configured input still means one broadcaster at a time; concurrent perspectives need additional capacity and testing. Country/city is optional text; no device coordinates are collected.
+
+Additional tests: tests/app-browser.cjs, tests/community-browser.cjs and rollback SQL tests under supabase/tests. Set OPENVIDEO_CHALLENGE_ID to a private staff-issued test challenge for integrated Live community checks. Use dedicated accounts and never commit credentials. See DEPLOYMENT.md and OPENVIDEO_PROGRESS.md for remaining launch work; this is a development preview.
